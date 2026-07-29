@@ -24,15 +24,14 @@
 
 static void show_fdinfo(struct seq_file *m, struct file *f,
 			void (*show)(struct seq_file *m,
-				     struct fsnotify_mark *mark,
-				     struct file *file))
+				     struct fsnotify_mark *mark))
 {
 	struct fsnotify_group *group = f->private_data;
 	struct fsnotify_mark *mark;
 
 	fsnotify_group_lock(group);
 	list_for_each_entry(mark, &group->marks_list, g_list) {
-		show(m, mark, f);
+		show(m, mark);
 		if (seq_has_overflowed(m))
 			break;
 	}
@@ -74,13 +73,10 @@ static void show_mark_fhandle(struct seq_file *m, struct inode *inode)
 
 #ifdef CONFIG_INOTIFY_USER
 
-static void inotify_fdinfo(struct seq_file *m, struct fsnotify_mark *mark,
-			   struct file *file)
+static void inotify_fdinfo(struct seq_file *m, struct fsnotify_mark *mark)
 {
 	struct inotify_inode_mark *inode_mark;
 	struct inode *inode;
-
-	(void)file;
 
 	if (mark->connector->type != FSNOTIFY_OBJ_TYPE_INODE)
 		return;
@@ -106,13 +102,19 @@ void inotify_show_fdinfo(struct seq_file *m, struct file *f)
 
 #ifdef CONFIG_FANOTIFY
 
+#ifdef CONFIG_KSU_SUSFS_SUS_MOUNT
 static void fanotify_fdinfo(struct seq_file *m, struct fsnotify_mark *mark,
 			    struct file *file)
+#else
+static void fanotify_fdinfo(struct seq_file *m, struct fsnotify_mark *mark)
+#endif
 {
 	unsigned int mflags = fanotify_mark_user_flags(mark);
 	struct inode *inode;
 
+#ifdef CONFIG_KSU_SUSFS_SUS_MOUNT
 	(void)file;
+#endif
 
 	if (mark->connector->type == FSNOTIFY_OBJ_TYPE_INODE) {
 		inode = igrab(fsnotify_conn_inode(mark->connector));

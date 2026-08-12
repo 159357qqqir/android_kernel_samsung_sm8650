@@ -102,19 +102,10 @@ void inotify_show_fdinfo(struct seq_file *m, struct file *f)
 
 #ifdef CONFIG_FANOTIFY
 
-#ifdef CONFIG_KSU_SUSFS_SUS_MOUNT
-static void fanotify_fdinfo(struct seq_file *m, struct fsnotify_mark *mark,
-			    struct file *file)
-#else
 static void fanotify_fdinfo(struct seq_file *m, struct fsnotify_mark *mark)
-#endif
 {
 	unsigned int mflags = fanotify_mark_user_flags(mark);
 	struct inode *inode;
-
-#ifdef CONFIG_KSU_SUSFS_SUS_MOUNT
-	(void)file;
-#endif
 
 	if (mark->connector->type == FSNOTIFY_OBJ_TYPE_INODE) {
 		inode = igrab(fsnotify_conn_inode(mark->connector));

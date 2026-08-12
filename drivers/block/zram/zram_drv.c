@@ -3117,23 +3117,6 @@ static void zram_meminfo(void *data, struct seq_file *m)
 	show_val_meminfo(m, zram->disk->disk_name, total_kbytes);
 }
 
-#if defined(CONFIG_TRACEPOINTS) && defined(CONFIG_ANDROID_VENDOR_HOOKS)
-static void zram_register_mem_hooks(struct zram *zram)
-{
-	register_trace_android_vh_show_mem(zram_show_mem, zram);
-	register_trace_android_vh_meminfo_proc_show(zram_meminfo, zram);
-}
-
-static void zram_unregister_mem_hooks(struct zram *zram)
-{
-	unregister_trace_android_vh_show_mem(zram_show_mem, zram);
-	unregister_trace_android_vh_meminfo_proc_show(zram_meminfo, zram);
-}
-#else
-static void zram_register_mem_hooks(struct zram *zram) { }
-static void zram_unregister_mem_hooks(struct zram *zram) { }
-#endif
-
 #ifdef CONFIG_ZRAM_RAMPLUS
 #ifdef CONFIG_ZRAM_LRU_WRITEBACK
 static void zram_entry_move_list(struct zram *zram,
@@ -3586,29 +3569,6 @@ static int zram_prefetchd(void *p)
 	return 0;
 }
 
-#if defined(CONFIG_TRACEPOINTS) && defined(CONFIG_ANDROID_VENDOR_HOOKS)
-static void zram_register_ramplus_hooks(struct zram *zram)
-{
-	register_trace_android_vh_smaps_pte_entry(zram_count_entry_type, zram);
-	register_trace_android_vh_show_smap(zram_show_entry_type, zram);
-	register_trace_android_vh_madvise_swapin_walk_pmd_entry(zram_request_prefetch, zram);
-	register_trace_android_vh_madvise_pageout_swap_entry(zram_request_writeback, zram);
-	register_trace_android_vh_process_madvise_end(zram_process_madvise_end, zram);
-}
-
-static void zram_unregister_ramplus_hooks(struct zram *zram)
-{
-	unregister_trace_android_vh_smaps_pte_entry(zram_count_entry_type, zram);
-	unregister_trace_android_vh_show_smap(zram_show_entry_type, zram);
-	unregister_trace_android_vh_madvise_swapin_walk_pmd_entry(zram_request_prefetch, zram);
-	unregister_trace_android_vh_madvise_pageout_swap_entry(zram_request_writeback, zram);
-	unregister_trace_android_vh_process_madvise_end(zram_process_madvise_end, zram);
-}
-#else
-static void zram_register_ramplus_hooks(struct zram *zram) { }
-static void zram_unregister_ramplus_hooks(struct zram *zram) { }
-#endif
-
 static void deinit_ramplus(struct zram *zram)
 {
 	unsigned long flags;
@@ -3638,7 +3598,11 @@ static void deinit_ramplus(struct zram *zram)
 	spin_unlock_irqrestore(&zram->wb_table_lock, flags);
 
 	kvfree(wb_table);
-	zram_unregister_ramplus_hooks(zram);
+	unregister_trace_android_vh_smaps_pte_entry(zram_count_entry_type, zram);
+	unregister_trace_android_vh_show_smap(zram_show_entry_type, zram);
+	unregister_trace_android_vh_madvise_swapin_walk_pmd_entry(zram_request_prefetch, zram);
+	unregister_trace_android_vh_madvise_pageout_swap_entry(zram_request_writeback, zram);
+	unregister_trace_android_vh_process_madvise_end(zram_process_madvise_end, zram);
 }
 
 static int init_ramplus(struct zram *zram, unsigned long nr_pages)
@@ -3687,7 +3651,11 @@ static int init_ramplus(struct zram *zram, unsigned long nr_pages)
 	}
 	INIT_WORK(&zram->ramplus[POOL].work, zram_fill_request_pool);
 	zram->wb_limit_enable = true;
-	zram_register_ramplus_hooks(zram);
+	register_trace_android_vh_smaps_pte_entry(zram_count_entry_type, zram);
+	register_trace_android_vh_show_smap(zram_show_entry_type, zram);
+	register_trace_android_vh_madvise_swapin_walk_pmd_entry(zram_request_prefetch, zram);
+	register_trace_android_vh_madvise_pageout_swap_entry(zram_request_writeback, zram);
+	register_trace_android_vh_process_madvise_end(zram_process_madvise_end, zram);
 
 	return 0;
 out:
@@ -3818,7 +3786,8 @@ static int zram_add(void)
 
 	zram_debugfs_register(zram);
 	pr_info("Added device: %s\n", zram->disk->disk_name);
-	zram_register_mem_hooks(zram);
+	register_trace_android_vh_show_mem(zram_show_mem, zram);
+	register_trace_android_vh_meminfo_proc_show(zram_meminfo, zram);
 
 	return device_id;
 
@@ -3841,7 +3810,8 @@ static int zram_remove(struct zram *zram)
 		return -EBUSY;
 	}
 
-	zram_unregister_mem_hooks(zram);
+	unregister_trace_android_vh_show_mem(zram_show_mem, zram);
+	unregister_trace_android_vh_meminfo_proc_show(zram_meminfo, zram);
 
 	claimed = zram->claim;
 	if (!claimed)

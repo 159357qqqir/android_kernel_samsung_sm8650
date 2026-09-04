@@ -14,16 +14,16 @@ jobs:
         with:
           fetch-depth: 0
 
-      - name: Install dependencies
+      - name: Install basic dependencies
         run: |
           sudo apt-get update
-          sudo apt-get install -y build-essential bc bison flex libelf-dev libssl-dev git wget
+          sudo apt-get install -y build-essential bc bison flex libelf-dev libssl-dev git
 
-      - name: Download Google Clang
-        run: |
-          wget https://github.com/llvm/llvm-project/releases/download/llvmorg-18.1.8/clang+llvm-18.1.8-x86_64-linux-gnu.tar.xz
-          tar -xf clang+llvm-18.1.8-x86_64-linux-gnu.tar.xz
-          echo "$PWD/clang+llvm-18.1.8-x86_64-linux-gnu/bin" >> $GITHUB_PATH
+      - name: Setup Google Android Clang
+        uses: KyleMayes/install-llvm-action@v2
+        with:
+          version: "18"
+          env: true
 
       - name: Build kernel with Clang
         run: |
@@ -37,3 +37,4 @@ jobs:
         with:
           name: kernel-build
           path: out/arch/arm64/boot/
+

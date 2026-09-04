@@ -7,27 +7,33 @@ on:
 
 jobs:
   build:
-    runs-on: ubuntu‑latest
+    runs-on: ubuntu-latest
     steps:
       - name: Checkout kernel source
         uses: actions/checkout@v4
         with:
-          fetch‑depth: 0
+          fetch-depth: 0
 
-      - name: Install build dependencies
+      - name: Install dependencies
         run: |
-          sudo apt‑get update
-          sudo apt‑get install‑y build‑essential libssl‑dev bc bison flex libelf‑dev gcc‑aarch64‑linux‑gnu
+          sudo apt-get update
+          sudo apt-get install -y build-essential bc bison flex libelf-dev libssl-dev git wget
 
-      - name: Build kernel
+      - name: Download Google Clang
+        run: |
+          wget https://github.com/llvm/llvm-project/releases/download/llvmorg-18.1.8/clang+llvm-18.1.8-x86_64-linux-gnu.tar.xz
+          tar -xf clang+llvm-18.1.8-x86_64-linux-gnu.tar.xz
+          echo "$PWD/clang+llvm-18.1.8-x86_64-linux-gnu/bin" >> $GITHUB_PATH
+
+      - name: Build kernel with Clang
         run: |
           export ARCH=arm64
-          export CROSS_COMPILE=aarch64‑linux‑gnu‑
+          export CC=clang
           make O=out gki_defconfig
           make O=out -j$(nproc)
 
       - name: Upload kernel artifact
-        uses: actions/upload‑artifact@v4
+        uses: actions/upload-artifact@v4
         with:
-          name: kernel‑build
+          name: kernel-build
           path: out/arch/arm64/boot/

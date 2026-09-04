@@ -1,4 +1,5 @@
-name: Build SM8650 Kernel
+name: Build Kernel
+
 on:
   push:
     branches: [ main ]
@@ -6,25 +7,27 @@ on:
 
 jobs:
   build:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu‑latest
     steps:
       - name: Checkout kernel source
         uses: actions/checkout@v4
+        with:
+          fetch‑depth: 0
 
       - name: Install build dependencies
         run: |
-          sudo apt-get update
-          sudo apt-get install -y bc bison flex libssl-dev libelf-dev gcc-aarch64-linux-gnu make git
+          sudo apt‑get update
+          sudo apt‑get install‑y build‑essential libssl‑dev bc bison flex libelf‑dev gcc‑aarch64‑linux‑gnu
 
       - name: Build kernel
         run: |
           export ARCH=arm64
-          export CROSS_COMPILE=aarch64-linux-gnu-
-          make O=out s9210_defconfig
+          export CROSS_COMPILE=aarch64‑linux‑gnu‑
+          make O=out gki_defconfig
           make O=out -j$(nproc)
 
-      - name: Upload artifacts
-        uses: actions/upload-artifact@v4
+      - name: Upload kernel artifact
+        uses: actions/upload‑artifact@v4
         with:
-          name: kernel-output
-          path: out/arch/arm64/boot
+          name: kernel‑build
+          path: out/arch/arm64/boot/

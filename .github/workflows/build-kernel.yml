@@ -17,24 +17,23 @@ jobs:
       - name: Install basic dependencies
         run: |
           sudo apt-get update
-          sudo apt-get install -y build-essential bc bison flex libelf-dev libssl-dev git
+          sudo apt-get install -y bc bison flex libssl-dev libelf-dev cpio gcc make python3
 
       - name: Setup Google Android Clang
         uses: KyleMayes/install-llvm-action@v2
         with:
-          version: "18"
-          env: true
+          version: 17
+          directory: ${{ github.workspace }}/llvm
 
       - name: Build kernel with Clang
         run: |
           export ARCH=arm64
-          export CC=clang
-          make O=out gki_defconfig
-          make O=out -j$(nproc)
+          export PATH=${{ github.workspace }}/llvm/bin:$PATH
+          make O=out gki_defconfig LLVM=1
+          make O=out LLVM=1 -j4
 
       - name: Upload kernel artifact
         uses: actions/upload-artifact@v4
         with:
           name: kernel-build
           path: out/arch/arm64/boot/
-

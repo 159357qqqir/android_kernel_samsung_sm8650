@@ -11,29 +11,20 @@ jobs:
       - name: Checkout kernel source
         uses: actions/checkout@v4
 
-      - name: Install dependencies
+      - name: Install build dependencies
         run: |
           sudo apt-get update
-          sudo apt-get install -y bc bison flex libssl-dev libelf-dev tar wget
-
-      - name: Download Proton Clang
-        run: |
-          wget https://github.com/kdrag0n/proton-clang/releases/download/2024.04.03/proton-clang-2024.04.03.tar.zst
-          mkdir -p clang
-          tar --zstd -xf proton-clang-2024.04.03.tar.zst -C clang
-          echo "${GITHUB_WORKSPACE}/clang/bin" >> $GITHUB_PATH
+          sudo apt-get install -y bc bison flex libssl-dev libelf-dev gcc-aarch64-linux-gnu make git
 
       - name: Build kernel
         run: |
           export ARCH=arm64
           export CROSS_COMPILE=aarch64-linux-gnu-
-          export CLANG_TRIPLE=aarch64-linux-gnu-
-          make O=out s24_defconfig
-          make O=out -j$(nproc) LLVM=1 LLVM_IAS=1
+          make O=out s9210_defconfig
+          make O=out -j$(nproc)
 
       - name: Upload artifacts
         uses: actions/upload-artifact@v4
         with:
           name: kernel-output
           path: out/arch/arm64/boot
-

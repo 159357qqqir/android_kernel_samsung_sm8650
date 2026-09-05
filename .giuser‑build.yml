@@ -1,0 +1,24 @@
+name: Build‑User‑Binary
+on:
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: 安装aarch64交叉编译器
+        run: |
+          sudo apt update
+          sudo apt install -y aarch64-linux-gnu-gcc
+
+      - name: 编译arm64程序
+        run: |
+          aarch64-linux-gnu-gcc hello.c -o hello_arm64
+
+      - name: 上传编译产物
+        uses: actions/upload-artifact@v4
+        with:
+          name: arm64-output
+          path: hello_arm64

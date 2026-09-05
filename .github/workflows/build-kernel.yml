@@ -1,3 +1,9 @@
+name: Build Kernel
+
+on:
+  push:
+    branches: [ main ]
+
 jobs:
   build:
     runs-on: ubuntu-latest
@@ -23,3 +29,4 @@ jobs:
         with:
           name: kernel-out
           path: out/arch/arm64/boot/
+

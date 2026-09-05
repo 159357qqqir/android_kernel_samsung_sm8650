@@ -7,8 +7,9 @@ jobs:
 
       - name: Download Android Clang
         uses: actions/checkout@v4
-        repository: google/android_prebuilts_clang_host_linux-x86_clang-r487747
-        path: llvm
+        with:
+          repository: google/android_prebuilts_clang_host_linux-x86_clang-r487747
+          path: llvm
 
       - name: Build kernel with Clang
         run: |

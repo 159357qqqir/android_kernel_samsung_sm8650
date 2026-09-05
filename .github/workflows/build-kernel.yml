@@ -19,12 +19,14 @@ jobs:
           sudo apt-get update
           sudo apt-get install -y bc bison flex libssl-dev libelf-dev cpio gcc make python3
 
-      - name: Create 8G Swap space
+      - name: Create 8G Swap space on /mnt
         run: |
-          sudo dd if=/dev/zero of=/swapfile bs=1G count=8 status=progress
-          sudo chmod 600 /swapfile
-          sudo mkswap /swapfile
-          sudo swapon /swapfile
+          sudo swapoff /mnt/my_swap || true
+          sudo rm -f /mnt/my_swap
+          sudo dd if=/dev/zero of=/mnt/my_swap bs=1G count=8 status=progress
+          sudo chmod 600 /mnt/my_swap
+          sudo mkswap /mnt/my_swap
+          sudo swapon /mnt/my_swap
           free -h
 
       - name: Setup Google Android Clang
@@ -45,3 +47,4 @@ jobs:
         with:
           name: kernel-build
           path: out/arch/arm64/boot/
+

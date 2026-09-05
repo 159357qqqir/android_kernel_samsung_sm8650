@@ -20,9 +20,9 @@ jobs:
           sudo apt-get update
           sudo apt-get install -y build-essential libssl-dev bison flex libelf-dev git wget unzip python3
 
-      - name: 下载Android官方Clang工具链(GKI必须)
+      - name: 从Github镜像下载clang r522817
         run: |
-          wget https://android.googlesource.com/platform/prebuilts/clang/host/linux-x86/+archive/refs/tags/android-14.0.0_r52/clang-r522817.tar.gz
+          wget https://github.com/zhiyong0804/clang-prebuilt/raw/main/clang-r522817.tar.gz
           mkdir -p clang
           tar -xf clang-r522817.tar.gz -C clang
           echo "$GITHUB_WORKSPACE/clang/bin" >> $GITHUB_PATH

@@ -11,12 +11,12 @@ jobs:
       - name: Checkout kernel source
         uses: actions/checkout@v4
 
-      - name: Download Android Clang
-        run: |
-          mkdir -p llvm
-          cd llvm
-          wget https://dl.google.com/android/ndk/android‑clang‑r487747‑linux‑x86.tar.zst
-          tar -I zstd -xvf android‑clang‑r487747‑linux‑x86.tar.zst
+      - name: Download Android Clang r487747c (mirror)
+        uses: actions/checkout@v4
+        with:
+          repository: RisingTechOSS/prebuilts_clang_host_linux-x86_clang-r487747c
+          path: llvm
+          depth: 1
 
       - name: Build kernel with Clang
         run: |

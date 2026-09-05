@@ -30,7 +30,7 @@ jobs:
           export ARCH=arm64
           export PATH=${{ github.workspace }}/llvm/bin:$PATH
           make O=out gki_defconfig LLVM=1
-          make O=out LLVM=1 -j3
+          make O=out LLVM=1 -j2
 
       - name: Upload kernel artifact
         uses: actions/upload-artifact@v4

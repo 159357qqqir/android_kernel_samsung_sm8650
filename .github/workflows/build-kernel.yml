@@ -10,34 +10,44 @@ on:
 
 jobs:
   build:
-    runs-on: ubuntu-24.04
+    runs-on: ubuntu-22.04
     steps:
       - name: 拉取内核源码
         uses: actions/checkout@v4
 
-      - name: 安装全套编译依赖
+      - name: 安装基础依赖
         run: |
           sudo apt-get update
-          sudo apt-get install -y gcc-aarch64-linux-gnu g++-aarch64-linux-gnu binutils-aarch64-linux-gnu build-essential libssl-dev bison flex libelf-dev git wget unzip python3
+          sudo apt-get install -y build-essential libssl-dev bison flex libelf-dev git wget unzip python3
 
-      - name: 下载mkbootimg工具
+      - name: 下载Android官方Clang工具链(GKI必须)
+        run: |
+          wget https://android.googlesource.com/platform/prebuilts/clang/host/linux-x86/+archive/refs/tags/android-14.0.0_r52/clang-r522817.tar.gz
+          mkdir -p clang
+          tar -xf clang-r522817.tar.gz -C clang
+          echo "$GITHUB_WORKSPACE/clang/bin" >> $GITHUB_PATH
+
+      - name: 下载mkbootimg
         run: |
           wget https://github.com/osm0sis/mkbootimg/archive/refs/heads/master.zip -O mkbootimg.zip
           unzip mkbootimg.zip
-          cd mkbootimg-master
-          make
+          cd mkbootimg-master && make
 
-      - name: GKI内核配置 gki_defconfig
+      - name: 彻底清理旧编译残留
+        run: |
+          make mrproper
+
+      - name: gki_defconfig配置
         run: |
           export ARCH=arm64
-          export CROSS_COMPILE=aarch64-linux-gnu-
-          make gki_defconfig
+          export PATH="$GITHUB_WORKSPACE/clang/bin:$PATH"
+          make CC=clang CROSS_COMPILE=aarch64-linux-gnu- LLVM=1 gki_defconfig
 
-      - name: 编译内核
+      - name: 单线程编译，避免内存OOM
         run: |
           export ARCH=arm64
-          export CROSS_COMPILE=aarch64-linux-gnu-
-          make -j$(nproc)
+          export PATH="$GITHUB_WORKSPACE/clang/bin:$PATH"
+          make CC=clang CROSS_COMPILE=aarch64-linux-gnu- LLVM=1 -j2
 
       - name: 打包boot.img
         run: |
@@ -51,7 +61,7 @@ jobs:
             --pagesize 4096 \
             -o boot.img
 
-      - name: 上传编译产物
+      - name: 上传产物
         uses: actions/upload-artifact@v4
         with:
           name: gki-kernel-output
@@ -59,4 +69,3 @@ jobs:
             arch/arm64/boot/Image
             arch/arm64/boot/dts/vendor/qcom/*.dtb
             boot.img
-

@@ -20,12 +20,11 @@ jobs:
           sudo apt-get update
           sudo apt-get install -y build-essential libssl-dev bison flex libelf-dev git wget unzip python3
 
-      - name: 从Github镜像下载clang r522817
-        run: |
-          wget https://github.com/zhiyong0804/clang-prebuilt/raw/main/clang-r522817.tar.gz
-          mkdir -p clang
-          tar -xf clang-r522817.tar.gz -C clang
-          echo "$GITHUB_WORKSPACE/clang/bin" >> $GITHUB_PATH
+      - name: 获取Android Clang工具链
+        uses: KyleMayes/install-llvm-action@v2
+        with:
+          version: "18"
+          env: true
 
       - name: 下载mkbootimg
         run: |
@@ -40,13 +39,11 @@ jobs:
       - name: gki_defconfig配置
         run: |
           export ARCH=arm64
-          export PATH="$GITHUB_WORKSPACE/clang/bin:$PATH"
           make CC=clang CROSS_COMPILE=aarch64-linux-gnu- LLVM=1 gki_defconfig
 
-      - name: 单线程编译，避免内存OOM
+      - name: 限制并发编译，防止OOM
         run: |
           export ARCH=arm64
-          export PATH="$GITHUB_WORKSPACE/clang/bin:$PATH"
           make CC=clang CROSS_COMPILE=aarch64-linux-gnu- LLVM=1 -j2
 
       - name: 打包boot.img

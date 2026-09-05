@@ -1,39 +1,30 @@
-name: Build Kernel
-
+name: Build SM8650 Kernel
 on:
   push:
     branches: [ main ]
+  workflow_dispatch:
 
 jobs:
   build:
-    runs-on: ubuntu‑latest
+    runs-on: ubuntu‑24.04
     steps:
-      - name: Checkout source
+      - name: 拉取内核源码
         uses: actions/checkout@v4
 
-      - name: Install LLVM‑16
-        id: llvm
-        uses: KyleMayes/install‑llvm‑action@v2
-        with:
-          version: "16.0.6"
-
-      - name: Build kernel
+      - name: 下载aarch64交叉编译器
         run: |
-          export ARCH=arm64
-          export PATH=${{ env.LLVM_PATH }}/bin:$PATH
-          mkdir -p ~/kernel_build
-          make mrproper
-          make O=~/kernel_build gki_defconfig LLVM=1 LLVM_IAS=1
-          scripts/config --disable CONFIG_DEBUG_INFO_BTF
-          scripts/config --disable CONFIG_DEBUG_INFO
-          scripts/config --disable CONFIG_LTO_CLANG
-          scripts/config --disable CONFIG_WLAN
-          scripts/config --disable CONFIG_NFC
-          scripts/config --disable CONFIG_BLUETOOTH
-          make O=~/kernel_build LLVM=1 LLVM_IAS=1 -j3
+          sudo apt‑get update
+          sudo apt‑get install‑y aarch64‑linux‑gnu‑gcc aarch64‑linux‑gnu‑binutils
 
-      - name: Upload artifact
+      - name: 编译内核
+        run: |
+          make ARCH=arm64 CROSS_COMPILE=aarch64‑linux‑gnu‑ sm8650_defconfig
+          make ARCH=arm64 CROSS_COMPILE=aarch64‑linux‑gnu‑ -j$(nproc)
+
+      - name: 上传编译产物
         uses: actions/upload‑artifact@v4
         with:
-          name: kernel‑out
-          path: ~/kernel_build/
+          name: kernel‑output
+          path: |
+            arch/arm64/boot/Image
+            arch/arm64/boot/dts/vendor/qcom/*.dtb

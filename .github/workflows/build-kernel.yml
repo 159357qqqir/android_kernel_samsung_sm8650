@@ -19,6 +19,14 @@ jobs:
           sudo apt-get update
           sudo apt-get install -y bc bison flex libssl-dev libelf-dev cpio gcc make python3
 
+      - name: Create 8G Swap space
+        run: |
+          sudo fallocate -l 8G /swapfile
+          sudo chmod 600 /swapfile
+          sudo mkswap /swapfile
+          sudo swapon /swapfile
+          free -h
+
       - name: Setup Google Android Clang
         uses: KyleMayes/install-llvm-action@v2
         with:
@@ -30,10 +38,11 @@ jobs:
           export ARCH=arm64
           export PATH=${{ github.workspace }}/llvm/bin:$PATH
           make O=out gki_defconfig LLVM=1
-          make O=out LLVM=1 -j4
+          make O=out LLVM=1 -j1
 
       - name: Upload kernel artifact
         uses: actions/upload-artifact@v4
         with:
           name: kernel-build
           path: out/arch/arm64/boot/
+

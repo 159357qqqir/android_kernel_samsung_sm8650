@@ -3,6 +3,7 @@ name: Build Kernel
 on:
   push:
     branches: [ main ]
+  workflow_dispatch:
 
 jobs:
   build:
@@ -10,13 +11,19 @@ jobs:
     steps:
       - name: Checkout kernel source
         uses: actions/checkout@v4
-
-      - name: Download Android Clang r487747c (mirror)
-        uses: actions/checkout@v4
         with:
-          repository: RisingTechOSS/prebuilts_clang_host_linux-x86_clang-r487747c
-          path: llvm
-          depth: 1
+          fetch-depth: 0
+
+      - name: Install basic dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y bc bison flex libssl-dev libelf-dev cpio gcc make python3
+
+      - name: Setup Google Android Clang
+        uses: KyleMayes/install-llvm-action@v2
+        with:
+          version: 17
+          directory: ${{ github.workspace }}/llvm
 
       - name: Build kernel with Clang
         run: |
@@ -28,5 +35,5 @@ jobs:
       - name: Upload kernel artifact
         uses: actions/upload-artifact@v4
         with:
-          name: kernel-out
+          name: kernel-build
           path: out/arch/arm64/boot/

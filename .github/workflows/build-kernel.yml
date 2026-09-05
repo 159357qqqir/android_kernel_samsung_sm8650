@@ -1,31 +1,19 @@
-name: Build Kernel
-on:
-  push:
-    branches: [ main ]
+    - name: Install LLVM‑17
+      uses: KyleMayes/install‑llvm‑action@v2
+      id: llvm
+      with:
+        version: "17.0.6"
 
-jobs:
-  build:
-    runs-on: ubuntu‑latest
-    steps:
-      - name: Checkout source
-        uses: actions/checkout@v4
-
-      - name: Install build dependencies
-        run: |
-          sudo apt update
-          sudo apt install -y bc bison flex libssl-dev libelf-dev cpio gcc make python3 dwarves
-
-      - name: Build kernel
-        run: |
-          export ARCH=arm64
-          export PATH=~/llvm/bin:$PATH
-          make O=out gki_defconfig LLVM=1
-          # 关闭BTF、调试信息、LTO，降低内存压力
-          scripts/config --disable CONFIG_DEBUG_INFO_BTF
-          scripts/config --disable CONFIG_DEBUG_INFO
-          scripts/config --disable CONFIG_LTO_CLANG
-          scripts/config --disable CONFIG_WLAN
-          scripts/config --disable CONFIG_QCOM_WLAN
-          scripts/config --disable CONFIG_BLUETOOTH
-          scripts/config --disable CONFIG_NFC
-          make O=out LLVM=1 -j1
+    - name: Build kernel
+      run: |
+        export ARCH=arm64
+        export PATH=${{ env.LLVM_PATH }}/bin:$PATH
+        make O=out gki_defconfig LLVM=1
+        scripts/config --disable CONFIG_DEBUG_INFO_BTF
+        scripts/config --disable CONFIG_DEBUG_INFO
+        scripts/config --disable CONFIG_LTO_CLANG
+        scripts/config --disable CONFIG_WLAN
+        scripts/config --disable CONFIG_QCOM_WLAN
+        scripts/config --disable CONFIG_BLUETOOTH
+        scripts/config --disable CONFIG_NFC
+        make O=out LLVM=1 -j4

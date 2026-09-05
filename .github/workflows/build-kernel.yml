@@ -1,3 +1,7 @@
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
 name: Build SM8650 Kernel
 on:
   push:
@@ -6,25 +10,26 @@ on:
 
 jobs:
   build:
-    runs-on: ubuntu‑24.04
+    runs-on: ubuntu-24.04
     steps:
       - name: 拉取内核源码
         uses: actions/checkout@v4
 
-      - name: 下载aarch64交叉编译器
+      - name: 安装编译依赖
         run: |
-          sudo apt‑get update
-          sudo apt‑get install‑y aarch64‑linux‑gnu‑gcc aarch64‑linux‑gnu‑binutils
+          sudo apt-get update
+          sudo apt-get install -y aarch64-linux-gnu-gcc aarch64-linux-gnu-binutils
 
       - name: 编译内核
         run: |
-          make ARCH=arm64 CROSS_COMPILE=aarch64‑linux‑gnu‑ sm8650_defconfig
-          make ARCH=arm64 CROSS_COMPILE=aarch64‑linux‑gnu‑ -j$(nproc)
+          make ARCH=arm64 CROSS_COMPILE=aarch64-linux-gnu- sm8650_defconfig
+          make ARCH=arm64 CROSS_COMPILE=aarch64-linux-gnu- -j$(nproc)
 
       - name: 上传编译产物
-        uses: actions/upload‑artifact@v4
+        uses: actions/upload-artifact@v4
         with:
-          name: kernel‑output
+          name: kernel-output
           path: |
             arch/arm64/boot/Image
             arch/arm64/boot/dts/vendor/qcom/*.dtb
+

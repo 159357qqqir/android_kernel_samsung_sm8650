@@ -21,16 +21,17 @@ jobs:
         run: |
           export ARCH=arm64
           export PATH=${{ env.LLVM_PATH }}/bin:$PATH
+          # 第一步先清理源码树（不要带O=out）
           make mrproper
-          make O=out gki_defconfig LLVM=1
+          # 再输出到out目录做配置、编译
+          make O=out gki_defconfig LLVM=1 LLVM_IAS=1
           scripts/config --disable CONFIG_DEBUG_INFO_BTF
           scripts/config --disable CONFIG_DEBUG_INFO
           scripts/config --disable CONFIG_LTO_CLANG
           scripts/config --disable CONFIG_WLAN
-          scripts/config --disable CONFIG_QCOM_WLAN
-          scripts/config --disable CONFIG_BLUETOOTH
           scripts/config --disable CONFIG_NFC
-          make O=out LLVM=1 -j4
+          scripts/config --disable CONFIG_BLUETOOTH
+          make O=out LLVM=1 LLVM_IAS=1 -j$(nproc)
 
       - name: Upload artifact
         uses: actions/upload-artifact@v4

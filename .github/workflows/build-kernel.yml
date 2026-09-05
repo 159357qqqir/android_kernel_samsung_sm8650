@@ -18,7 +18,7 @@ jobs:
       - name: 安装基础依赖
         run: |
           sudo apt-get update
-          sudo apt-get install -y build-essential libssl-dev bison flex libelf-dev git wget unzip python3
+          sudo apt-get install -y build-essential libssl-dev bison flex libelf-dev git wget unzip python3 python3-pip
 
       - name: 获取Android Clang工具链
         uses: KyleMayes/install-llvm-action@v2
@@ -26,11 +26,10 @@ jobs:
           version: "18"
           env: true
 
-      - name: 下载mkbootimg
+      - name: 下载google的mkbootimg.py（python版无需编译C代码）
         run: |
-          wget https://github.com/osm0sis/mkbootimg/archive/refs/heads/master.zip -O mkbootimg.zip
-          unzip mkbootimg.zip
-          cd mkbootimg-master && make
+          wget https://android.googlesource.com/platform/system/tools/mkbootimg/+/refs/heads/main/mkbootimg.py?format=raw -O mkbootimg.py
+          chmod +x mkbootimg.py
 
       - name: 彻底清理旧编译残留
         run: |
@@ -46,9 +45,9 @@ jobs:
           export ARCH=arm64
           make CC=clang CROSS_COMPILE=aarch64-linux-gnu- LLVM=1 -j2
 
-      - name: 打包boot.img
+      - name: 使用python脚本打包boot.img
         run: |
-          ./mkbootimg-master/mkbootimg \
+          python3 mkbootimg.py \
             --kernel arch/arm64/boot/Image \
             --base 0x00000000 \
             --kernel_offset 0x00008000 \

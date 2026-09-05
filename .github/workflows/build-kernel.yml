@@ -1,39 +1,19 @@
-name: Build Kernel
-
-on:
-  push:
-    branches: [ main ]
-  workflow_dispatch:
-
-jobs:
-  build:
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout kernel source
-        uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
-
-      - name: Install basic dependencies
+      - name: Install build dependencies
         run: |
-          sudo apt-get update
-          sudo apt-get install -y bc bison flex libssl-dev libelf-dev cpio gcc make python3
+          sudo apt update
+          sudo apt install -y bc bison flex libssl-dev libelf-dev cpio gcc make python3 dwarves
 
-      - name: Setup Google Android Clang
-        uses: KyleMayes/install-llvm-action@v2
-        with:
-          version: 17
-          directory: ${{ github.workspace }}/llvm
-
-      - name: Build kernel with Clang
+      - name: Build kernel
         run: |
           export ARCH=arm64
-          export PATH=${{ github.workspace }}/llvm/bin:$PATH
+          export PATH=~/llvm/bin:$PATH
           make O=out gki_defconfig LLVM=1
+          # 关闭BTF、调试信息、LTO，降低内存压力
+          scripts/config --disable CONFIG_DEBUG_INFO_BTF
+          scripts/config --disable CONFIG_DEBUG_INFO
+          scripts/config --disable CONFIG_LTO_CLANG
+          scripts/config --disable CONFIG_WLAN
+          scripts/config --disable CONFIG_QCOM_WLAN
+          scripts/config --disable CONFIG_BLUETOOTH
+          scripts/config --disable CONFIG_NFC
           make O=out LLVM=1 -j1
-
-      - name: Upload kernel artifact
-        uses: actions/upload-artifact@v4
-        with:
-          name: kernel-build
-          path: out/arch/arm64/boot/

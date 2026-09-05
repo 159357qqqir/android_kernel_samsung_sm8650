@@ -6,35 +6,34 @@ on:
 
 jobs:
   build:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu‑latest
     steps:
       - name: Checkout source
         uses: actions/checkout@v4
 
-      - name: Install LLVM‑17
+      - name: Install LLVM‑16
         id: llvm
-        uses: KyleMayes/install-llvm-action@v2
+        uses: KyleMayes/install‑llvm‑action@v2
         with:
-          version: "17.0.6"
+          version: "16.0.6"
 
       - name: Build kernel
         run: |
           export ARCH=arm64
           export PATH=${{ env.LLVM_PATH }}/bin:$PATH
-          rm -rf out
+          mkdir -p ~/kernel_build
           make mrproper
-          make O=out gki_defconfig LLVM=1 LLVM_IAS=1
+          make O=~/kernel_build gki_defconfig LLVM=1 LLVM_IAS=1
           scripts/config --disable CONFIG_DEBUG_INFO_BTF
           scripts/config --disable CONFIG_DEBUG_INFO
           scripts/config --disable CONFIG_LTO_CLANG
           scripts/config --disable CONFIG_WLAN
           scripts/config --disable CONFIG_NFC
           scripts/config --disable CONFIG_BLUETOOTH
-          make O=out LLVM=1 LLVM_IAS=1 -j3
+          make O=~/kernel_build LLVM=1 LLVM_IAS=1 -j3
 
       - name: Upload artifact
-        uses: actions/upload-artifact@v4
+        uses: actions/upload‑artifact@v4
         with:
           name: kernel‑out
-          path: out/
-
+          path: ~/kernel_build/

@@ -12,10 +12,11 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Download Android Clang
-        uses: actions/checkout@v4
-        with:
-          repository: google/android_prebuilts_clang_host_linux-x86_clang-r487747
-          path: llvm
+        run: |
+          mkdir -p llvm
+          cd llvm
+          wget https://dl.google.com/android/ndk/android‑clang‑r487747‑linux‑x86.tar.zst
+          tar -I zstd -xvf android‑clang‑r487747‑linux‑x86.tar.zst
 
       - name: Build kernel with Clang
         run: |
@@ -29,4 +30,3 @@ jobs:
         with:
           name: kernel-out
           path: out/arch/arm64/boot/
-

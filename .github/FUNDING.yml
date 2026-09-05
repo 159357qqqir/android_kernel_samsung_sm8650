@@ -1,10 +1,35 @@
-# 这些是受支持的赞助模式平台
+name: Build S24 Kernel
+on:
+  push:
+    branches: [ main ]
+  workflow_dispatch:  # 允许网页手动点按钮启动编译
 
-# 将 YuzakiKokuban 替换为您的 GitHub 用户名
-github: [YuzakiKokuban]
+jobs:
+  build:
+    runs-on: ubuntu‑latest
+    steps:
+      - uses: actions/checkout@v4
 
-# 自定义链接，将显示在“Sponsor”按钮的下拉菜单中
-custom:
-  - https://www.paypal.me/LangQin280
-  - https://qr.alipay.com/fkx13433fi3skccvxkldn48
-  - https://app.binance.com/qr/dplk879862a9139d41469d7f3f66a059c5e9
+      # 下载gcc/clang编译工具链
+      - name: Download Clang toolchain
+        run: |
+          git clone https://github.com/kdrag0n/proton‑clang‑21.git clang
+
+      # 构建配置，s24 sm8650 defconfig
+      - name: Build kernel
+        run: |
+          export PATH=$PWD/clang/bin:$PATH
+          make O=out ARCH=arm64 CC=clang LLVM=1 LLVM_IAS=1 sm8650‑gki_defconfig
+          make O=out ARCH=arm64 CC=clang LLVM=1 LLVM_IAS=1 -j$(nproc)
+
+      # 打包为可卡刷zip（原项目有打包脚本）
+      - name: Package flashable zip
+        run: bash ./anykernel3/build.sh
+
+      # 上传成品作为artifacts
+      - name: Upload build artifact
+        uses: actions/upload‑artifact@v4
+        with:
+          name: kernel‑zip
+          path: anykernel3/*.zip
+

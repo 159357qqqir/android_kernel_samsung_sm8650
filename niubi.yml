@@ -1,0 +1,28 @@
+name: Build Project
+on:
+  push:
+    branches: [ main ]
+
+jobs:
+  build:
+    runs‑on: ubuntu‑latest
+    steps:
+      - name: 拉取代码
+        uses: actions/checkout@v4
+
+      - name: 安装编译依赖
+        run: sudo apt update && sudo apt install‑y gcc g++ make cmake
+
+      - name: 执行编译
+        run: |
+          mkdir build
+          cd build
+          cmake ..
+          make -j$(nproc)
+
+      - name: 上传编译产物
+        uses: actions/upload‑artifact@v4
+        with:
+          name: build‑output
+          path: build/*
+

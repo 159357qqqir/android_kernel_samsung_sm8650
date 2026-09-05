@@ -28,9 +28,10 @@ jobs:
       - name: Build kernel with Clang
         run: |
           export ARCH=arm64
+          sudo modprobe zswap
           export PATH=${{ github.workspace }}/llvm/bin:$PATH
           make O=out gki_defconfig LLVM=1
-          make O=out LLVM=1 -j2
+          make O=out LLVM=1 -j1
 
       - name: Upload kernel artifact
         uses: actions/upload-artifact@v4

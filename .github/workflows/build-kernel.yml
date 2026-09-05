@@ -2,7 +2,7 @@ concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
 
-name: Build SM8650 Kernel
+name: Build SM8650 Samsung GKI Kernel
 on:
   push:
     branches: [ main ]
@@ -15,20 +15,48 @@ jobs:
       - name: 拉取内核源码
         uses: actions/checkout@v4
 
-      - name: 安装编译依赖
+      - name: 安装全套编译依赖
         run: |
           sudo apt-get update
-          sudo apt-get install -y gcc-aarch64-linux-gnu g++-aarch64-linux-gnu binutils-aarch64-linux-gnu build-essential libssl-dev bison flex
+          sudo apt-get install -y gcc-aarch64-linux-gnu g++-aarch64-linux-gnu binutils-aarch64-linux-gnu build-essential libssl-dev bison flex libelf-dev git wget unzip python3
+
+      - name: 下载mkbootimg工具
+        run: |
+          wget https://github.com/osm0sis/mkbootimg/archive/refs/heads/master.zip -O mkbootimg.zip
+          unzip mkbootimg.zip
+          cd mkbootimg-master
+          make
+
+      - name: GKI内核配置 gki_defconfig
+        run: |
+          export ARCH=arm64
+          export CROSS_COMPILE=aarch64-linux-gnu-
+          make gki_defconfig
 
       - name: 编译内核
         run: |
-          make ARCH=arm64 CROSS_COMPILE=aarch64-linux-gnu- sm8650_defconfig
-          make ARCH=arm64 CROSS_COMPILE=aarch64-linux-gnu- -j$(nproc)
+          export ARCH=arm64
+          export CROSS_COMPILE=aarch64-linux-gnu-
+          make -j$(nproc)
+
+      - name: 打包boot.img
+        run: |
+          ./mkbootimg-master/mkbootimg \
+            --kernel arch/arm64/boot/Image \
+            --base 0x00000000 \
+            --kernel_offset 0x00008000 \
+            --ramdisk_offset 0x01000000 \
+            --second_offset 0x00f00000 \
+            --tags_offset 0x00000100 \
+            --pagesize 4096 \
+            -o boot.img
 
       - name: 上传编译产物
         uses: actions/upload-artifact@v4
         with:
-          name: kernel-output
+          name: gki-kernel-output
           path: |
             arch/arm64/boot/Image
             arch/arm64/boot/dts/vendor/qcom/*.dtb
+            boot.img
+

@@ -1,19 +1,39 @@
-    - name: Install LLVM‑17
-      uses: KyleMayes/install‑llvm‑action@v2
-      id: llvm
-      with:
-        version: "17.0.6"
+name: Build Kernel
 
-    - name: Build kernel
-      run: |
-        export ARCH=arm64
-        export PATH=${{ env.LLVM_PATH }}/bin:$PATH
-        make O=out gki_defconfig LLVM=1
-        scripts/config --disable CONFIG_DEBUG_INFO_BTF
-        scripts/config --disable CONFIG_DEBUG_INFO
-        scripts/config --disable CONFIG_LTO_CLANG
-        scripts/config --disable CONFIG_WLAN
-        scripts/config --disable CONFIG_QCOM_WLAN
-        scripts/config --disable CONFIG_BLUETOOTH
-        scripts/config --disable CONFIG_NFC
-        make O=out LLVM=1 -j4
+on:
+  push:
+    branches: [ main ]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout source
+        uses: actions/checkout@v4
+
+      - name: Install LLVM‑17
+        id: llvm
+        uses: KyleMayes/install-llvm-action@v2
+        with:
+          version: "17.0.6"
+
+      - name: Build kernel
+        run: |
+          export ARCH=arm64
+          export PATH=${{ env.LLVM_PATH }}/bin:$PATH
+          make O=out gki_defconfig LLVM=1
+          scripts/config --disable CONFIG_DEBUG_INFO_BTF
+          scripts/config --disable CONFIG_DEBUG_INFO
+          scripts/config --disable CONFIG_LTO_CLANG
+          scripts/config --disable CONFIG_WLAN
+          scripts/config --disable CONFIG_QCOM_WLAN
+          scripts/config --disable CONFIG_BLUETOOTH
+          scripts/config --disable CONFIG_NFC
+          make O=out LLVM=1 -j4
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: kernel‑out
+          path: out/
+

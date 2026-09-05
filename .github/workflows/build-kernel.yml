@@ -18,7 +18,7 @@ jobs:
       - name: 安装编译依赖
         run: |
           sudo apt-get update
-          sudo apt-get install -y aarch64-linux-gnu-gcc aarch64-linux-gnu-binutils
+          sudo apt-get install -y gcc-aarch64-linux-gnu g++-aarch64-linux-gnu binutils-aarch64-linux-gnu build-essential libssl-dev bison flex
 
       - name: 编译内核
         run: |
@@ -32,4 +32,3 @@ jobs:
           path: |
             arch/arm64/boot/Image
             arch/arm64/boot/dts/vendor/qcom/*.dtb
-

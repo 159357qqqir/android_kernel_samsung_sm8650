@@ -15,53 +15,29 @@ jobs:
       - name: 拉取内核源码
         uses: actions/checkout@v4
 
-      - name: 安装基础依赖
+      - name: 安装编译依赖
         run: |
           sudo apt-get update
-          sudo apt-get install -y build-essential libssl-dev bison flex libelf-dev git wget unzip python3 python3-pip
+          sudo apt-get install -y build-essential libssl-dev bison flex libelf-dev git python3 gcc-aarch64-linux-gnu
 
-      - name: 获取Android Clang工具链
-        uses: KyleMayes/install-llvm-action@v2
-        with:
-          version: "18"
-          env: true
-
-      - name: 下载google的mkbootimg.py（python版无需编译C代码）
-        run: |
-          wget https://android.googlesource.com/platform/system/tools/mkbootimg/+/refs/heads/main/mkbootimg.py?format=raw -O mkbootimg.py
-          chmod +x mkbootimg.py
-
-      - name: 彻底清理旧编译残留
+      - name: 清理旧编译
         run: |
           make mrproper
 
-      - name: gki_defconfig配置
+      - name: gki_defconfig
         run: |
           export ARCH=arm64
-          make CC=clang CROSS_COMPILE=aarch64-linux-gnu- LLVM=1 gki_defconfig
+          make gki_defconfig
 
-      - name: 限制并发编译，防止OOM
+      - name: 编译内核 -j2
         run: |
           export ARCH=arm64
-          make CC=clang CROSS_COMPILE=aarch64-linux-gnu- LLVM=1 -j2
+          make CROSS_COMPILE=aarch64-linux-gnu- -j2
 
-      - name: 使用python脚本打包boot.img
-        run: |
-          python3 mkbootimg.py \
-            --kernel arch/arm64/boot/Image \
-            --base 0x00000000 \
-            --kernel_offset 0x00008000 \
-            --ramdisk_offset 0x01000000 \
-            --second_offset 0x00f00000 \
-            --tags_offset 0x00000100 \
-            --pagesize 4096 \
-            -o boot.img
-
-      - name: 上传产物
+      - name: 上传编译产物
         uses: actions/upload-artifact@v4
         with:
-          name: gki-kernel-output
+          name: kernel-output
           path: |
             arch/arm64/boot/Image
-            arch/arm64/boot/dts/vendor/qcom/*.dtb
-            boot.img
+            arch/arm64/boot/dts/vendor/qcom/

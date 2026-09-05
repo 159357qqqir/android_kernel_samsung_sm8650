@@ -21,6 +21,7 @@ jobs:
         run: |
           export ARCH=arm64
           export PATH=${{ env.LLVM_PATH }}/bin:$PATH
+          make mrproper
           make O=out gki_defconfig LLVM=1
           scripts/config --disable CONFIG_DEBUG_INFO_BTF
           scripts/config --disable CONFIG_DEBUG_INFO
@@ -36,4 +37,3 @@ jobs:
         with:
           name: kernel‑out
           path: out/
-

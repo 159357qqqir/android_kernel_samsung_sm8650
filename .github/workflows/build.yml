@@ -29,6 +29,9 @@ jobs:
           sudo apt update
           sudo apt install -y build-essential bc bison flex libssl-dev libelf-dev libncurses-dev python3 python3-pip
 
+      - name: 🔍 查看现有的内核defconfig（调试用）
+        run: ls arch/arm64/configs/
+
       - name: ⚙️ 编译内核 -j2
         run: |
           export PATH="$PWD/clang/bin:$PATH"
@@ -37,19 +40,6 @@ jobs:
           export LD=lld
           export LLVM=1
           export CLANG_TRIPLE=aarch64-linux-gnu-
-          make build_config.aarch64
+          # =========这里！把 build_config.aarch64 替换成你ls出来真实的文件名！=========
+          make sm8650_defconfig
           make -j2
-
-      - name: 📁 打包编译产物
-        run: |
-          mkdir -p out
-          cp arch/arm64/boot/Image out/
-          cp arch/arm64/boot/dts/vendor/qcom/*.dtb out/
-          cp arch/arm64/boot/dts/vendor/qcom/*.dtbo out/
-          tar -Jcf kernel-out.tar.xz out
-
-      - name: 📤 上传成品
-        uses: actions/upload-artifact@v4
-        with:
-          name: S24-SM8650-Kernel
-          path: kernel-out.tar.xz

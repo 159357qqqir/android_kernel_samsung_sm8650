@@ -16,7 +16,8 @@ jobs:
 
       - name: 📥 拉取内核源码
         uses: actions/checkout@v4
-        fetch-depth: 1
+        with:
+          fetch-depth: 1
 
       - name: 📦 下载Proton Clang工具链
         run: |

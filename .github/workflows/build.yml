@@ -34,12 +34,16 @@ jobs:
 
       - name: ⚙️ 编译内核 -j2
         run: |
+          # 只把clang目录加到PATH，但是HOSTCC保持系统gcc！
           export PATH="$PWD/clang/bin:$PATH"
           export ARCH=arm64
           export CC=clang
           export LD=lld
           export LLVM=1
           export CLANG_TRIPLE=aarch64-linux-gnu-
-          # =========这里！把 build_config.aarch64 替换成你ls出来真实的文件名！=========
+          # HOSTCC 使用系统gcc，避免旧lld链接主机程序报错！
+          export HOSTCC=gcc
+          export HOSTCXX=g++
+          
           make sm8650_defconfig
           make -j2

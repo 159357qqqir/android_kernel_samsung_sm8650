@@ -13,7 +13,7 @@ jobs:
           sudo mkswap /swapfile
           sudo swapon /swapfile
           free -h
-
+          
       - name: 📥 拉取内核源码
         uses: actions/checkout@v4
         with:

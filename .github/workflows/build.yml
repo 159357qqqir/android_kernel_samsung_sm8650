@@ -4,7 +4,7 @@ on:
 
 jobs:
   build:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-22.04
     steps:
       - name: 🔧 开启16G Swap防止LTO爆内存
         run: |
@@ -29,21 +29,39 @@ jobs:
           sudo apt update
           sudo apt install -y build-essential bc bison flex libssl-dev libelf-dev libncurses-dev python3 python3-pip
 
-      - name: 🔍 查看现有的内核defconfig（调试用）
-        run: ls arch/arm64/configs/
+      - name: 🔍 查看kernelconfigs里面的配置文件
+        run: ls kernelconfigs/
 
       - name: ⚙️ 编译内核 -j2
         run: |
-          # 只把clang目录加到PATH，但是HOSTCC保持系统gcc！
-          export PATH="$PWD/clang/bin:$PATH"
+          CLANG_BIN="$PWD/clang/bin"
           export ARCH=arm64
-          export CC=clang
-          export LD=lld
+          export CC="$CLANG_BIN/clang"
+          export LD="$CLANG_BIN/ld.lld"
           export LLVM=1
           export CLANG_TRIPLE=aarch64-linux-gnu-
-          # HOSTCC 使用系统gcc，避免旧lld链接主机程序报错！
+          export CROSS_COMPILE="$CLANG_BIN/aarch64-linux-gnu-"
           export HOSTCC=gcc
           export HOSTCXX=g++
           
-          make sm8650_defconfig
+          # =====重点！这个源码配置文件在kernelconfigs，不是arch/arm64/configs=====
+          cp kernelconfigs/s24_defconfig .config
+          make olddefconfig
           make -j2
+
+      - name: 📂 检查编译输出
+        run: ls -la arch/arm64/boot/
+
+      - name: 📁 打包编译产物
+        run: |
+          mkdir -p out
+          cp arch/arm64/boot/Image out/
+          cp arch/arm64/boot/dts/vendor/qcom/*.dtb out/
+          cp arch/arm64/boot/dts/vendor/qcom/*.dtbo out/
+          tar -Jcf kernel-out.tar.xz out
+
+      - name: 📤 上传成品
+        uses: actions/upload-artifact@v4
+        with:
+          name: S24-SM8650-Kernel
+          path: kernel-out.tar.xz

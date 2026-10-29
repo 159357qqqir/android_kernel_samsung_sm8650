@@ -1,4 +1,4 @@
-name: Build SM8650 S24 Kernel
+name: Build SM8650 S24 GKI Kernel
 on:
   workflow_dispatch:
 
@@ -6,10 +6,10 @@ jobs:
   build:
     runs-on: ubuntu-22.04
     steps:
-      - name: 🔧 开启16G Swap防止LTO爆内存
+      - name: 🔧 快速创建8G Swap(fallocate)
         run: |
           SWAPFILE="/tmp/swapfile"
-          sudo dd if=/dev/zero of="$SWAPFILE" bs=1G count=16 status=none
+          sudo fallocate -l 8G "$SWAPFILE"
           sudo chmod 600 "$SWAPFILE"
           sudo mkswap "$SWAPFILE"
           sudo swapon "$SWAPFILE"
@@ -20,42 +20,42 @@ jobs:
         with:
           fetch-depth: 1
 
-      - name: 📦 下载Proton Clang工具链
+      - name: 📦 下载 Proton Clang
         run: |
           git clone --depth=1 https://github.com/kdrag0n/proton-clang.git clang
 
-      - name: 🧩 安装依赖 + llvm/lld
+      - name: 🧩 安装编译依赖
         run: |
           sudo apt update
           sudo apt install -y build-essential bc bison flex libssl-dev libelf-dev libncurses-dev python3 python3-pip lld llvm
 
-      - name: 🔍 确认defconfig
+      - name: 🔍 核对defconfig
         run: ls ./arch/arm64/configs/
 
-      - name: ⚙️ 编译内核 -j2
+      - name: ⚙️ 编译内核 -j2（关闭BTF，跳过resolve_btfids）
         run: |
           CLANG_BIN="$PWD/clang/bin"
-          # 优先把clang放到PATH最前面！
           export PATH="${CLANG_BIN}:$PATH"
           export ARCH=arm64
           export LLVM=1
           export LLVM_IAS=1
           export CLANG_TRIPLE=aarch64-linux-gnu-
           export CROSS_COMPILE=aarch64-linux-gnu-
-          export HOSTCC=clang
-          export HOSTCXX=clang++
-          export HOSTLD=lld
 
           make gki_defconfig
+          # 关键！关闭BTF，不编译resolve_btfids，避开报错
+          scripts/config --disable DEBUG_INFO_BTF
           make -j2
 
-      - name: 📂 检查编译输出
-        run: ls -la arch/arm64/boot/
+      - name: 📂 检查编译产物
+        run: |
+          ls -la arch/arm64/boot/
+          ls -la arch/arm64/boot/dts/vendor/qcom/ 2>/dev/null || echo "dtb目录不存在"
 
-      - name: 📁 打包编译产物
+      - name: 📦 打包内核文件
         run: |
           mkdir -p out
-          cp arch/arm64/boot/Image out/
+          cp arch/arm64/boot/Image out/ 2>/dev/null || true
           cp arch/arm64/boot/dts/vendor/qcom/*.dtb out/ 2>/dev/null || true
           cp arch/arm64/boot/dts/vendor/qcom/*.dtbo out/ 2>/dev/null || true
           tar -Jcf kernel-out.tar.xz out

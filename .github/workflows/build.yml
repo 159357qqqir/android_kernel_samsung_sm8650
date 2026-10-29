@@ -24,27 +24,29 @@ jobs:
         run: |
           git clone --depth=1 https://github.com/kdrag0n/proton-clang.git clang
 
-      - name: 🧩 安装完整编译依赖
+      - name: 🧩 安装依赖 + llvm/lld
         run: |
           sudo apt update
-          sudo apt install -y build-essential bc bison flex libssl-dev libelf-dev libncurses-dev python3 python3-pip
+          sudo apt install -y build-essential bc bison flex libssl-dev libelf-dev libncurses-dev python3 python3-pip lld llvm
 
-      - name: 🔍 全局搜索所有 defconfig
-        run: find . -name "*defconfig"
+      - name: 🔍 确认defconfig
+        run: ls ./arch/arm64/configs/
 
       - name: ⚙️ 编译内核 -j2
         run: |
           CLANG_BIN="$PWD/clang/bin"
+          # 优先把clang放到PATH最前面！
+          export PATH="${CLANG_BIN}:$PATH"
           export ARCH=arm64
-          export CC="$CLANG_BIN/clang"
-          export LD="$CLANG_BIN/ld.lld"
           export LLVM=1
+          export LLVM_IAS=1
           export CLANG_TRIPLE=aarch64-linux-gnu-
-          export CROSS_COMPILE="$CLANG_BIN/aarch64-linux-gnu-"
-          export HOSTCC=gcc
-          export HOSTCXX=g++
-          
-          make sm8650_defconfig
+          export CROSS_COMPILE=aarch64-linux-gnu-
+          export HOSTCC=clang
+          export HOSTCXX=clang++
+          export HOSTLD=lld
+
+          make gki_defconfig
           make -j2
 
       - name: 📂 检查编译输出
@@ -54,12 +56,12 @@ jobs:
         run: |
           mkdir -p out
           cp arch/arm64/boot/Image out/
-          cp arch/arm64/boot/dts/vendor/qcom/*.dtb out/
-          cp arch/arm64/boot/dts/vendor/qcom/*.dtbo out/
+          cp arch/arm64/boot/dts/vendor/qcom/*.dtb out/ 2>/dev/null || true
+          cp arch/arm64/boot/dts/vendor/qcom/*.dtbo out/ 2>/dev/null || true
           tar -Jcf kernel-out.tar.xz out
 
       - name: 📤 上传成品
         uses: actions/upload-artifact@v4
         with:
-          name: S24-SM8650-Kernel
+          name: S24-SM8650-GKI-Kernel
           path: kernel-out.tar.xz

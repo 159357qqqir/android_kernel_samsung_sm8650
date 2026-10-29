@@ -8,7 +8,7 @@ jobs:
     steps:
       - name: 🔧 开启16G Swap防止LTO爆内存
         run: |
-          sudo fallocate -l 16G /swapfile
+          sudo dd if=/dev/zero of=/swapfile bs=1G count=16 status=none
           sudo chmod 600 /swapfile
           sudo mkswap /swapfile
           sudo swapon /swapfile
